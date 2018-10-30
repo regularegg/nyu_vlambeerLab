@@ -1,6 +1,7 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 
 // MAZE PROC GEN LAB
 // all students: complete steps 1-6, as listed in this file
@@ -9,10 +10,25 @@ using UnityEngine;
 // STEP 1: ======================================================================================
 // put this script on a Sphere... it will move around, and drop a path of floor tiles behind it
 
+//USAGE: Put this script on a sphere
+//INTENT: It will move n drop a path of floor tiles behind it (Y)
+
 public class Pathmaker : MonoBehaviour {
 
 // STEP 2: ============================================================================================
 // translate the pseudocode below
+
+	private int counter = 0;
+
+	public bool RandomizeSpawn, RandomizeRightTurnCeil, RandomizeLeftTurnCeil, randomizeLocalMaxTiles, randomizeAll;
+
+	public float  turnRightCeil, turnLeftCeil, spawnNew, maxTiles, localMaxTiles, rayLength;
+
+	public Transform floorPrefab, pathmakerSpherePrefab;
+
+	public Transform[] floorTypes = new Transform[3];
+
+	public static int GlobalTileCount = 0, globalSphereCount = 0;
 
 //	DECLARE CLASS MEMBER VARIABLES:
 //	Declare a private integer called counter that starts at 0; 		// counter var will track how many floor tiles I've instantiated
@@ -20,19 +36,96 @@ public class Pathmaker : MonoBehaviour {
 //	Declare a public Transform called pathmakerSpherePrefab, assign the prefab in inspector; 		// you'll have to make a "pathmakerSphere" prefab later
 
 
-	void Update () {
-//		If counter is less than 50, then:
-//			Generate a random number from 0.0f to 1.0f;
-//			If random number is less than 0.25f, then rotate myself 90 degrees;
-//				... Else if number is 0.25f-0.5f, then rotate myself -90 degrees;
-//				... Else if number is 0.99f-1.0f, then instantiate a pathmakerSpherePrefab clone at my current position;
-//			// end elseIf
+	void Start()
+	{
+		if (randomizeAll)
+		{
+			RandomizeRightTurnCeil = true;
+			RandomizeSpawn = true;
+			RandomizeLeftTurnCeil = true;
+			randomizeLocalMaxTiles = true;
+		}
+		
+		if (randomizeLocalMaxTiles)
+		{
+			localMaxTiles = Random.Range(10, 100);
+		}
 
-//			Instantiate a floorPrefab clone at current position;
-//			Move forward ("forward", as in, the direction I'm currently facing) by 5 units;
-//			Increment counter;
-//		Else:
-//			Destroy my game object; 		// self destruct if I've made enough tiles already
+		if (RandomizeLeftTurnCeil)
+		{
+			turnLeftCeil = Random.Range(0, .5f);
+		}
+		
+		if (RandomizeRightTurnCeil)
+		{
+			turnRightCeil = Random.Range(turnLeftCeil, 1f);
+		}
+		
+
+		if (RandomizeSpawn)
+		{
+			spawnNew = Random.Range(turnRightCeil, 1f);
+		}
+	}
+	void Update () {
+
+		if (GlobalTileCount < maxTiles)
+		{
+			if (counter < localMaxTiles)
+			{
+				float randFloat = Random.Range(0.0f, 1.0f);
+
+				if (randFloat < turnRightCeil)
+				{
+					transform.Rotate(Vector3.up * 90f);
+				}
+				else if (randFloat > turnRightCeil && randFloat <= turnLeftCeil)
+				{
+					transform.Rotate(Vector3.up * -90f);
+				}
+				else if (randFloat > spawnNew && randFloat <= 1.0f)
+				{
+					Instantiate(pathmakerSpherePrefab, transform.position, Quaternion.identity);
+					globalSphereCount++;
+				}
+				
+				//prevents tiles from instantiating on top of each other
+				
+				Ray ray = new Ray(transform.position,Vector3.forward);
+				RaycastHit rayHit = new RaycastHit();
+				Debug.DrawRay(ray.origin,ray.direction*rayLength,Color.green);
+					
+				if (!Physics.Raycast(ray,rayLength))
+				{
+					//Instantiate(floorPrefab, transform.position, Quaternion.identity);
+					Transform temp = Instantiate(floorTypes[Random.Range(0,3)], transform.position, Quaternion.identity);
+					
+					SceneReload.tiles.Add(temp.transform);
+					
+//					Debug.Log(tiles.Count);
+					counter++;
+					GlobalTileCount++;
+					Debug.Log("raycast hit nothing");
+					Debug.Log("Global Count");
+				}
+				else
+				{
+					Debug.Log("uh oh on top ):");
+				}
+
+				
+				transform.position += transform.forward * 5;
+				
+			}
+			else
+			{
+				Destroy(gameObject);
+			}
+		}
+		else
+		{
+			Destroy(gameObject);
+		}
 	}
 
 } // end of class scope
@@ -40,7 +133,7 @@ public class Pathmaker : MonoBehaviour {
 // MORE STEPS BELOW!!!........
 
 
-
+//**************************STEP 2 DONE**************************//
 
 // STEP 3: =====================================================================================
 // implement, test, and stabilize the system
@@ -52,6 +145,7 @@ public class Pathmaker : MonoBehaviour {
 //	- code it so that all the Pathmakers can only spawn a grand total of 500 tiles in the entire world; how would you do that?
 //	- (hint: declare a "public static int" and have each Pathmaker check this "globalTileCount", somewhere in your code? if there are already enough tiles, then maybe the Pathmaker could Destroy my game object
 
+//**************************STEP 3 DONE**************************//
 
 
 // STEP 4: ======================================================================================
@@ -61,6 +155,7 @@ public class Pathmaker : MonoBehaviour {
 // b. how would you tune the probabilities to generate lots of long hallways? does it work?
 // c. tweak all the probabilities that you want... what % chance is there for a pathmaker to make a pathmaker? is that too high or too low?
 
+//**************************STEP 4 DONE**************************//
 
 
 // STEP 5: ===================================================================================
